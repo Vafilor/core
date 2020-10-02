@@ -17,6 +17,7 @@ import (
 	"net/http"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/gorilla/handlers"
 	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
@@ -75,6 +76,7 @@ func main() {
 			// This is okay, as the pod will restart and try connecting to DB again.
 			// dbDriverName may be nil, but sqlx will then panic.
 			db := sqlx.MustConnect(dbDriverName, databaseDataSourceName)
+			db.SetConnMaxLifetime(5 * time.Minute)
 			goose.SetTableName("goose_db_version")
 			if err := goose.Run("up", db.DB, filepath.Join("db", "sql")); err != nil {
 				log.Fatalf("Failed to run database sql migrations: %v", err)
