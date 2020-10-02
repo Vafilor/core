@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/onepanelio/core/api"
+	log "github.com/sirupsen/logrus"
 	"net/http"
 	"strings"
 
@@ -27,6 +28,9 @@ const (
 func getBearerToken(ctx context.Context) (*string, bool) {
 	md, ok := metadata.FromIncomingContext(ctx)
 	if !ok {
+		log.WithFields(log.Fields{
+			"Method": "getBearerToken",
+		}).Error("Unable to get metadata from incoming context")
 		return nil, false
 	}
 
@@ -55,10 +59,21 @@ func getBearerToken(ctx context.Context) (*string, bool) {
 		return &t, true
 	}
 
+	log.WithFields(log.Fields{
+		"Method": "getBearerToken",
+	}).Error("Unable to get BearerToken:", md)
+
 	return nil, false
 }
 
 func getClient(ctx context.Context, kubeConfig *v1.Config, db *v1.DB, sysConfig v1.SystemConfig) (context.Context, error) {
+	if kubeConfig == nil {
+		return nil, fmt.Errorf("getClient - nil passed in for kubeConfig")
+	}
+	if db == nil {
+		return nil, fmt.Errorf("getClient - nil passed in for db")
+	}
+
 	bearerToken, ok := getBearerToken(ctx)
 	if !ok {
 		return nil, status.Error(codes.Unauthenticated, `Missing or invalid "authorization" header.`)
